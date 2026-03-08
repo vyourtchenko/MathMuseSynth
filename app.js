@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Audio Context and Node Setup
     let audioCtx = null;
     let sourceNode = null;
+    let fadeNode = null;
     let gainNode = null;
     
     // Playback state
@@ -85,7 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
         volumeInput.addEventListener('input', (e) => {
             if (gainNode) {
                 // Exponential volume scaling sounds more natural
-                gainNode.gain.value = Math.pow(parseFloat(e.target.value), 2);
+                const vol = Math.pow(parseFloat(e.target.value), 2);
+                // Slowly approach the target value over 50ms to prevent popping
+                gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.05);
             }
         });
 
@@ -442,13 +445,19 @@ document.addEventListener('DOMContentLoaded', () => {
         sourceNode.buffer = buffer;
         sourceNode.loop = isLooping;
 
+        fadeNode = audioCtx.createGain();
+        fadeNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        fadeNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.02); // 20ms fade in
+
         if (!gainNode) {
             gainNode = audioCtx.createGain();
             gainNode.connect(audioCtx.destination);
         }
         
-        gainNode.gain.value = Math.pow(parseFloat(volumeInput.value), 2);
-        sourceNode.connect(gainNode);
+        gainNode.gain.setValueAtTime(Math.pow(parseFloat(volumeInput.value), 2), audioCtx.currentTime);
+        
+        sourceNode.connect(fadeNode);
+        fadeNode.connect(gainNode);
 
         // Events
         sourceNode.onended = () => {
@@ -490,11 +499,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isNaN(newDuration) || newDuration <= 0) return;
 
         const oldNode = sourceNode;
+        const oldFadeNode = fadeNode;
         
         sourceNode = audioCtx.createBufferSource();
         sourceNode.buffer = buffer;
         sourceNode.loop = isLooping;
-        if (gainNode) sourceNode.connect(gainNode);
+        
+        fadeNode = audioCtx.createGain();
+        fadeNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        fadeNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.02); // 20ms fade in
+        
+        sourceNode.connect(fadeNode);
+        if (gainNode) fadeNode.connect(gainNode);
         
         const offset = fraction * newDuration;
         sourceNode.start(0, offset);
@@ -502,10 +518,17 @@ document.addEventListener('DOMContentLoaded', () => {
         startTime = audioCtx.currentTime - offset;
         activeDuration = newDuration;
 
-        if (oldNode) {
+        if (oldNode && oldFadeNode) {
+            // Fade out the old node 20ms
+            oldFadeNode.gain.setValueAtTime(oldFadeNode.gain.value, audioCtx.currentTime);
+            oldFadeNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.02);
             oldNode.onended = null; // Prevent it from stopping the new node
-            try { oldNode.stop(0); } catch(e) {}
-            oldNode.disconnect();
+            try { oldNode.stop(audioCtx.currentTime + 0.02); } catch(e) {}
+            
+            // Clean up old disconnected nodes safely
+            setTimeout(() => {
+                try { oldNode.disconnect(); oldFadeNode.disconnect(); } catch(e) {}
+            }, 50);
         }
         
         sourceNode.onended = () => {
@@ -514,10 +537,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function stopAudio() {
-        if (sourceNode) {
-            try { sourceNode.stop(); } catch(e) {}
-            sourceNode.disconnect();
+        if (sourceNode && fadeNode) {
+            const oldNode = sourceNode;
+            const oldFadeNode = fadeNode;
+            oldFadeNode.gain.setValueAtTime(oldFadeNode.gain.value, audioCtx.currentTime);
+            oldFadeNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.02);
+            try { oldNode.stop(audioCtx.currentTime + 0.02); } catch(e) {}
+            
+            setTimeout(() => {
+                try { oldNode.disconnect(); oldFadeNode.disconnect(); } catch(e) {}
+            }, 50);
+            
             sourceNode = null;
+            fadeNode = null;
         }
         isPlaying = false;
         
