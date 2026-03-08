@@ -257,12 +257,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (y > maxY) maxY = y;
         }
 
-        // Normalize Audio to fit strictly between -1.0 and 1.0 (clipping prevention)
+        // Normalize Audio to fit strictly between -1.0 and 1.0
         const maxAmp = Math.max(Math.abs(minY), Math.abs(maxY));
         if (maxAmp > 0) {
             for (let i = 0; i < frameCount; i++) {
                 channelData[i] = channelData[i] / maxAmp;
             }
+        }
+
+        // Apply a tiny fade-in and fade-out envelope directly to the buffer to prevent looping pops
+        // 5 milliseconds is usually enough to stop a pop without changing the sound character
+        const fadeSamples = Math.min(Math.floor(audioCtx.sampleRate * 0.005), Math.floor(frameCount / 4));
+        
+        for (let i = 0; i < fadeSamples; i++) {
+            const ratio = i / fadeSamples;
+            // Fade-in front end
+            channelData[i] *= ratio;
+            // Fade-out back end
+            channelData[frameCount - 1 - i] *= ratio;
         }
 
         return buffer;
