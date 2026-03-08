@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLoop = document.getElementById('btn-loop');
     const btnDraw = document.getElementById('btn-draw');
     const btnResetView = document.getElementById('btn-reset-view');
+    const btnZoomYIn = document.getElementById('btn-zoom-y-in');
+    const btnZoomYOut = document.getElementById('btn-zoom-y-out');
 
     // Audio Context and Node Setup
     let audioCtx = null;
@@ -102,6 +104,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btnResetView.addEventListener('click', () => {
             resetViewState();
+            requestRedraw();
+        });
+        
+        btnZoomYIn.addEventListener('click', () => {
+            const spanY = viewState.yMax - viewState.yMin;
+            const center = (viewState.yMax + viewState.yMin) / 2;
+            const newSpanY = spanY * 0.8;
+            viewState.yMin = center - newSpanY / 2;
+            viewState.yMax = center + newSpanY / 2;
+            requestRedraw();
+        });
+
+        btnZoomYOut.addEventListener('click', () => {
+            const spanY = viewState.yMax - viewState.yMin;
+            const center = (viewState.yMax + viewState.yMin) / 2;
+            const newSpanY = spanY * 1.25;
+            viewState.yMin = center - newSpanY / 2;
+            viewState.yMax = center + newSpanY / 2;
             requestRedraw();
         });
         

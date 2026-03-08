@@ -381,6 +381,46 @@ canvas:active {
     z-index: 20;
 }
 
+/* Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(15, 17, 26, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 0.5rem;
+    border-radius: 50px;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.5);
+    z-index: 20;
+}
+
+.btn-icon {
+    background: transparent;
+    color: var(--text-muted);
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+
 button {
     font-family: inherit;
     cursor: pointer;
