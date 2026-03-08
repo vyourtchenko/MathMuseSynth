@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let startTime = 0;
     let activeDuration = 0;
     
+    // Dynamic variables
+    const variablesContainer = document.getElementById('variables-container');
+    let customVariables = {}; // e.g. { a: 1, b: 2 }
+    
     // Last successfully compiled math function
     let compiledMath = null;
     // Current rendered shape points
@@ -104,8 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const node = math.parse(asciiMath);
             compiledMath = node.compile();
             
+            // Extract custom variables from AST
+            extractVariables(node);
+
+            // Create evaluation scope combining 'x' and our custom slider values
+            const scope = { x: 0, ...customVariables };
+            
             // Validate it runs with a dummy variable
-            compiledMath.evaluate({ x: 0 });
+            compiledMath.evaluate(scope);
             
             // If success, calculate waveform and draw
             calculatePathPoints();
@@ -141,7 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i <= resolution; i++) {
             const currentX = xMin + (i * step);
             try {
-                const y = compiledMath.evaluate({ x: currentX });
+                const scope = { x: currentX, ...customVariables };
+                const y = compiledMath.evaluate(scope);
                 // Only consider finite numbers
                 if (isFinite(y)) {
                     currentWaveformPoints.push({ x: currentX, y: y });
@@ -246,7 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let y = 0;
             try {
-                y = compiledMath.evaluate({ x: currentX });
+                const scope = { x: currentX, ...customVariables };
+                y = compiledMath.evaluate(scope);
                 if (!isFinite(y)) y = 0;
             } catch (e) {
                 y = 0;
@@ -278,6 +290,104 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return buffer;
+    }
+
+    // --- Dynamic Variables ---
+    function extractVariables(node) {
+        const foundSymbols = new Set();
+        
+        // Traverse AST to find symbols
+        node.traverse(function (child, path, parent) {
+            if (child.isSymbolNode) {
+                const name = child.name;
+                // Exclude 'x' (our independent variable), and known math functions/constants (like 'sin', 'pi', 'e')
+                if (name !== 'x' && typeof math[name] === 'undefined') {
+                    foundSymbols.add(name);
+                }
+            }
+        });
+
+        const newSymbols = Array.from(foundSymbols);
+        let changed = false;
+
+        // Remove old sliders that are no longer in the equation
+        const currentKeys = Object.keys(customVariables);
+        for (const key of currentKeys) {
+            if (!newSymbols.includes(key)) {
+                delete customVariables[key];
+                changed = true;
+            }
+        }
+
+        // Add new symbols with a default value of 1
+        for (const symbol of newSymbols) {
+            if (customVariables[symbol] === undefined) {
+                customVariables[symbol] = 1;
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            renderVariableSliders();
+        }
+    }
+
+    function renderVariableSliders() {
+        if (Object.keys(customVariables).length === 0) {
+            variablesContainer.style.display = 'none';
+            variablesContainer.innerHTML = '';
+            return;
+        }
+
+        variablesContainer.style.display = 'flex';
+        variablesContainer.innerHTML = ''; // Clear existing
+
+        for (const [symbol, value] of Object.entries(customVariables)) {
+            const group = document.createElement('div');
+            group.className = 'variable-control-group control-group';
+            
+            const header = document.createElement('div');
+            header.className = 'variable-header';
+            
+            const label = document.createElement('label');
+            label.textContent = symbol + " = ";
+            
+            const numInput = document.createElement('input');
+            numInput.type = 'number';
+            numInput.className = 'variable-number-input';
+            numInput.step = '0.1';
+            numInput.value = value;
+            
+            header.appendChild(label);
+            header.appendChild(numInput);
+            
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.className = 'variable-slider';
+            slider.min = '-10';
+            slider.max = '10';
+            slider.step = '0.1';
+            slider.value = value;
+
+            // Sync interactions
+            const updateVar = (newVal) => {
+                const parsed = parseFloat(newVal);
+                if (!isNaN(parsed)) {
+                    customVariables[symbol] = parsed;
+                    slider.value = parsed;
+                    numInput.value = parsed;
+                    parseAndDraw();
+                    if (isPlaying) updateAudioLive();
+                }
+            };
+
+            slider.addEventListener('input', (e) => updateVar(e.target.value));
+            numInput.addEventListener('input', (e) => updateVar(e.target.value));
+
+            group.appendChild(header);
+            group.appendChild(slider);
+            variablesContainer.appendChild(group);
+        }
     }
 
     function toggleLoop() {

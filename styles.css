@@ -273,6 +273,48 @@ input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.2);
 }
 
+/* Dynamic Variables */
+.variables-section {
+    display: none; /* Changed by JS */
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    background: rgba(99, 102, 241, 0.1); 
+    padding: 1.5rem;
+    border-radius: 16px;
+    border: 1px dashed var(--primary);
+}
+
+.variable-control-group {
+    min-width: 200px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 12px;
+}
+
+.variable-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.variable-header label {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.variable-number-input {
+    width: 80px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.9rem;
+}
+
+.variable-slider {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
 /* Visualizer */
 .visualizer-section {
     display: flex;
