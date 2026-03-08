@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const btnLoop = document.getElementById('btn-loop');
     const btnDraw = document.getElementById('btn-draw');
+    const btnResetView = document.getElementById('btn-reset-view');
 
     // Audio Context and Node Setup
     let audioCtx = null;
@@ -98,6 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
             parseAndDraw();
             if (isPlaying) updateAudioLive();
         });
+
+        btnResetView.addEventListener('click', () => {
+            resetViewState();
+            requestRedraw();
+        });
         
         btnPlay.addEventListener('click', togglePlayback);
         btnLoop.addEventListener('click', toggleLoop);
@@ -123,6 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const span = max - min;
         viewState.xMin = min - span * 0.1;
         viewState.xMax = max + span * 0.1;
+        viewState.yMin = -1.5;
+        viewState.yMax = 1.5;
     }
 
     // --- Parser & Logic ---
