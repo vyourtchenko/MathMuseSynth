@@ -1,0 +1,33 @@
+# MathMuse | Hear the Shape of Math
+
+MathMuse is an interactive web application that translates mathematical functions directly into sound in real-time. It provides a visual and auditory playground to explore how equations sound and look by offering a rich mathematical input interface, an interactive waveform graph, and real-time audio synthesis.
+
+## Features
+
+- **Rich Mathematical Input:** Powered by MathLive and Math.js, users can input complex equations using standard mathematical notation (e.g., `\sin(100 \cdot x) + \cos(200 \cdot x)`).
+- **Real-Time Audio Synthesis:** The web application seamlessly maps the numerical output of your function across a chosen mathematical domain directly into an audio buffer using the Web Audio API. 
+- **Dynamic Variables:** MathMuse intelligently parses your equation to find any custom variables (like `a`, `b`, etc.). It automatically brings up interactive sliders for these variables, letting you manipulate the math—and the resulting sound and shape—in real-time during playback.
+- **Interactive Waveform Graph:** 
+  - **Pan & Zoom:** Click and drag to pan across the graph. Scroll with your mouse wheel or trackpad to zoom in and out of the X-axis. 
+  - **Y-Axis Controls:** Dedicated zoom in (+) and zoom out (-) buttons for the Y-axis.
+  - **Reset View:** Quickly return to the default, comfortable viewing perspective where domain boundaries are clearly visible with a single click.
+  - **Domain Handles:** Drag the edges of the highlighted domain area directly on the canvas to change your `x-min` and `x-max` bounds visually.
+- **Advanced Playback Controls:**
+  - Standard Play, Pause, and Loop toggles.
+  - Adjustable duration (in seconds) to define how long it takes to traverse the chosen domain.
+  - Smooth audio fade-ins and fade-outs to prevent popping sounds when looping or changing variables while audio plays.
+  - Visual playhead that tracks exactly where you are in the mathematical domain as the audio plays.
+- **Modern UI/Glassmorphism Design:** A beautiful split-layout built with vanilla CSS featuring a futuristic dark mode, animated background blooms, and smooth hover interactions.
+
+## Technologies Used
+
+- HTML5, CSS3, Vanilla JavaScript
+- [MathLive](https://cortexjs.io/mathlive/) for the rich equation editor.
+- [Math.js](https://mathjs.org/) for mathematical expression parsing and evaluation.
+- HTML5 Canvas for performant graph rendering.
+- Web Audio API for continuous audio sonification.
+- [Phosphor Icons](https://phosphoricons.com/) for UI iconography. 
+
+## How To Run
+
+Simply open `index.html` in your web browser to run the application. No build step or local server is required.
