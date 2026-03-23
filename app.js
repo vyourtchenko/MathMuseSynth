@@ -153,6 +153,14 @@ document.addEventListener('DOMContentLoaded', () => {
         viewState.yMax = 1.5;
     }
 
+    function getVariableScope() {
+        const scope = {};
+        for (const [key, config] of Object.entries(customVariables)) {
+            scope[key] = config.value;
+        }
+        return scope;
+    }
+
     // --- Parser & Logic ---
     function parseAndDraw() {
         if (!mathField || typeof mathField.getValue !== 'function') return;
@@ -161,21 +169,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const asciiMath = mathField.getValue('ascii-math');
         
         try {
-            // Replace implicit multiplication or weird tokens if necessary, though math.js handles them mostly
-            // MathLive's ascii-math sometimes uses spaces or `*`. math.js `.compile` builds a callable node
             const node = math.parse(asciiMath);
             compiledMath = node.compile();
             
-            // Extract custom variables from AST
             extractVariables(node);
 
-            // Create evaluation scope combining 'x' and our custom slider values
-            const scope = { x: 0, ...customVariables };
+            const scope = { x: 0, ...getVariableScope() };
             
-            // Validate it runs with a dummy variable
             compiledMath.evaluate(scope);
             
-            // If success, calculate waveform and draw
             calculatePathPoints();
             drawWaveform();
         } catch (e) {
@@ -196,17 +198,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Calculate points for visual purposes
         const resolution = 2000;
         const widthRange = xMax - xMin;
         const step = widthRange / resolution;
         
+        const runtimeScope = getVariableScope();
         for (let i = 0; i <= resolution; i++) {
             const currentX = xMin + (i * step);
             try {
-                const scope = { x: currentX, ...customVariables };
-                const y = compiledMath.evaluate(scope);
-                // Only consider finite numbers
+                runtimeScope.x = currentX;
+                const y = compiledMath.evaluate(runtimeScope);
                 if (isFinite(y)) {
                     currentWaveformPoints.push({ x: currentX, y: y });
                 } else {
@@ -320,18 +321,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const domainSpan = xMax - xMin;
 
         // Generate audio directly from function
+        const runtimeScope = getVariableScope();
         let minY = Infinity, maxY = -Infinity;
         
         for (let i = 0; i < frameCount; i++) {
-            // Calculate progress (0 to 1)
             const progress = i / frameCount;
-            // Map to function domain x
             const currentX = xMin + (progress * domainSpan);
             
             let y = 0;
             try {
-                const scope = { x: currentX, ...customVariables };
-                y = compiledMath.evaluate(scope);
+                runtimeScope.x = currentX;
+                y = compiledMath.evaluate(runtimeScope);
                 if (!isFinite(y)) y = 0;
             } catch (e) {
                 y = 0;
@@ -394,16 +394,121 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Add new symbols with a default value of 1
         for (const symbol of newSymbols) {
             if (customVariables[symbol] === undefined) {
-                customVariables[symbol] = 1;
+                customVariables[symbol] = { 
+                    value: 1, 
+                    min: -10, 
+                    max: 10, 
+                    step: 0.1, 
+                    mode: 'oscillate', 
+                    speed: 1, 
+                    isAnimating: false, 
+                    direction: 1 
+                };
                 changed = true;
             }
         }
 
         if (changed) {
             renderVariableSliders();
+        }
+    }
+
+    let varAnimFrameId = null;
+    let lastVarAnimTime = 0;
+    let lastAudioUpdate = 0;
+
+    function ensureAnimationLoop() {
+        if (!varAnimFrameId) {
+            lastVarAnimTime = performance.now();
+            varAnimFrameId = requestAnimationFrame(variableAnimationLoop);
+        }
+    }
+
+    function variableAnimationLoop(timestamp) {
+        const delta = (timestamp - lastVarAnimTime) / 1000;
+        lastVarAnimTime = timestamp;
+        
+        let anyAnimating = false;
+        let anyChanged = false;
+
+        for (const [symbol, config] of Object.entries(customVariables)) {
+            if (config.isAnimating) {
+                anyAnimating = true;
+                const domainSpan = Math.abs(config.max - config.min);
+                // Base speed traverses 20% of domain per second at 1x
+                const rate = config.speed * delta * Math.max(0.1, domainSpan * 0.2);
+                
+                if (config.mode === 'continuous') {
+                    config.value += rate * config.direction;
+                    anyChanged = true;
+                } else if (config.mode === 'oscillate') {
+                    config.value += rate * config.direction;
+                    if (config.value >= config.max) {
+                        config.value = config.max;
+                        config.direction = -1;
+                    } else if (config.value <= config.min) {
+                        config.value = config.min;
+                        config.direction = 1;
+                    }
+                    anyChanged = true;
+                } else if (config.mode === 'loop') {
+                    config.value += rate;
+                    if (config.value >= config.max) {
+                        config.value = config.min;
+                    }
+                    anyChanged = true;
+                } else if (config.mode === 'once') {
+                    if (config.value < config.max) {
+                        config.value += rate;
+                        if (config.value >= config.max) {
+                            config.value = config.max;
+                            config.isAnimating = false;
+                        }
+                        anyChanged = true;
+                    } else {
+                        config.isAnimating = false;
+                    }
+                }
+            }
+        }
+
+        if (anyChanged) {
+            const inputs = variablesContainer.querySelectorAll('.variable-control-group');
+            let idx = 0;
+            for (const [symbol, config] of Object.entries(customVariables)) {
+                if (config.isAnimating || (!config.isAnimating && inputs[idx])) {
+                    const group = inputs[idx];
+                    const numInput = group?.querySelector('.variable-number-input');
+                    const slider = group?.querySelector('.variable-slider');
+                    const btn = group?.querySelector('.btn-play-var');
+                    if (numInput && slider) {
+                        numInput.value = config.value.toFixed(2);
+                        slider.value = config.value;
+                    }
+                    if (btn && !config.isAnimating) {
+                        btn.classList.remove('playing');
+                        btn.innerHTML = '<i class="ph-fill ph-play"></i>';
+                    }
+                }
+                idx++;
+            }
+            requestRedraw();
+            
+            if (isPlaying) {
+                const now = performance.now();
+                if (now - lastAudioUpdate > 100) {
+                    lastAudioUpdate = now;
+                    updateAudioLive(); // Throttled real-time updates while animating
+                }
+            }
+        }
+
+        if (anyAnimating) {
+            varAnimFrameId = requestAnimationFrame(variableAnimationLoop);
+        } else {
+            varAnimFrameId = null;
         }
     }
 
@@ -417,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         variablesContainer.style.display = 'flex';
         variablesContainer.innerHTML = ''; // Clear existing
 
-        for (const [symbol, value] of Object.entries(customVariables)) {
+        for (const [symbol, config] of Object.entries(customVariables)) {
             const group = document.createElement('div');
             group.className = 'variable-control-group control-group';
             
@@ -430,8 +535,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const numInput = document.createElement('input');
             numInput.type = 'number';
             numInput.className = 'variable-number-input';
-            numInput.step = '0.1';
-            numInput.value = value;
+            numInput.step = config.step;
+            numInput.min = config.min;
+            numInput.max = config.max;
+            numInput.value = config.value.toFixed(2);
             
             header.appendChild(label);
             header.appendChild(numInput);
@@ -439,28 +546,136 @@ document.addEventListener('DOMContentLoaded', () => {
             const slider = document.createElement('input');
             slider.type = 'range';
             slider.className = 'variable-slider';
-            slider.min = '-10';
-            slider.max = '10';
-            slider.step = '0.1';
-            slider.value = value;
+            slider.min = config.min;
+            slider.max = config.max;
+            slider.step = config.step;
+            slider.value = config.value;
+
+            const settings = document.createElement('div');
+            settings.className = 'variable-settings';
+
+            const minLabel = document.createElement('label');
+            minLabel.textContent = 'Min';
+            const minInput = document.createElement('input');
+            minInput.type = 'number';
+            minInput.value = config.min;
+            minLabel.appendChild(minInput);
+
+            const maxLabel = document.createElement('label');
+            maxLabel.textContent = 'Max';
+            const maxInput = document.createElement('input');
+            maxInput.type = 'number';
+            maxInput.value = config.max;
+            maxLabel.appendChild(maxInput);
+
+            const stepLabel = document.createElement('label');
+            stepLabel.textContent = 'Step';
+            const stepInput = document.createElement('input');
+            stepInput.type = 'number';
+            stepInput.value = config.step;
+            stepLabel.appendChild(stepInput);
+
+            settings.appendChild(minLabel);
+            settings.appendChild(maxLabel);
+            settings.appendChild(stepLabel);
+
+            const controls = document.createElement('div');
+            controls.className = 'variable-controls';
+
+            const btnPlayVar = document.createElement('button');
+            btnPlayVar.className = 'btn-play-var' + (config.isAnimating ? ' playing' : '');
+            btnPlayVar.innerHTML = config.isAnimating ? '<i class="ph-fill ph-pause"></i>' : '<i class="ph-fill ph-play"></i>';
+            btnPlayVar.title = "Play/Pause Animation";
+
+            const modeSelect = document.createElement('select');
+            modeSelect.title = "Animation Mode";
+            modeSelect.innerHTML = `
+                <option value="oscillate" ${config.mode==='oscillate'?'selected':''}>Oscillate</option>
+                <option value="loop" ${config.mode==='loop'?'selected':''}>Loop</option>
+                <option value="once" ${config.mode==='once'?'selected':''}>Play Once</option>
+                <option value="continuous" ${config.mode==='continuous'?'selected':''}>Continuous</option>
+            `;
+
+            const speedLabel = document.createElement('div');
+            speedLabel.style.display = 'flex';
+            speedLabel.style.alignItems = 'center';
+            speedLabel.style.gap = '4px';
+            speedLabel.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem;">Speed</span>';
+            const speedInput = document.createElement('input');
+            speedInput.type = 'number';
+            speedInput.step = '0.1';
+            speedInput.min = '0.1';
+            speedInput.value = config.speed;
+            speedInput.title = "Speed multiplier (e.g. 1, 2, 0.5)";
+            speedInput.style.width = '50px';
+            speedLabel.appendChild(speedInput);
+
+            controls.appendChild(btnPlayVar);
+            controls.appendChild(modeSelect);
+            controls.appendChild(speedLabel);
 
             // Sync interactions
             const updateVar = (newVal) => {
-                const parsed = parseFloat(newVal);
+                let parsed = parseFloat(newVal);
                 if (!isNaN(parsed)) {
-                    customVariables[symbol] = parsed;
+                    if (config.mode !== 'continuous') {
+                        parsed = Math.max(parseFloat(config.min), Math.min(parseFloat(config.max), parsed));
+                    }
+                    config.value = parsed;
                     slider.value = parsed;
-                    numInput.value = parsed;
-                    parseAndDraw();
-                    if (isPlaying) updateAudioLive();
+                    numInput.value = parsed.toFixed(2);
+                    requestRedraw();
+                    if (isPlaying) {
+                        const now = performance.now();
+                        if (now - lastAudioUpdate > 100) {
+                            lastAudioUpdate = now;
+                            updateAudioLive();
+                        }
+                    }
                 }
             };
 
             slider.addEventListener('input', (e) => updateVar(e.target.value));
-            numInput.addEventListener('input', (e) => updateVar(e.target.value));
+            numInput.addEventListener('change', (e) => updateVar(e.target.value));
+
+            minInput.addEventListener('change', (e) => {
+                config.min = parseFloat(e.target.value) || -10;
+                slider.min = config.min;
+                numInput.min = config.min;
+                updateVar(config.value);
+            });
+            maxInput.addEventListener('change', (e) => {
+                config.max = parseFloat(e.target.value) || 10;
+                slider.max = config.max;
+                numInput.max = config.max;
+                updateVar(config.value);
+            });
+            stepInput.addEventListener('change', (e) => {
+                config.step = parseFloat(e.target.value) || 0.1;
+                slider.step = config.step;
+                numInput.step = config.step;
+            });
+            modeSelect.addEventListener('change', (e) => {
+                config.mode = e.target.value;
+            });
+            speedInput.addEventListener('change', (e) => {
+                config.speed = parseFloat(e.target.value) || 1;
+            });
+
+            btnPlayVar.addEventListener('click', () => {
+                config.isAnimating = !config.isAnimating;
+                btnPlayVar.classList.toggle('playing', config.isAnimating);
+                btnPlayVar.innerHTML = config.isAnimating ? '<i class="ph-fill ph-pause"></i>' : '<i class="ph-fill ph-play"></i>';
+                if (config.isAnimating && config.mode === 'once' && config.value >= config.max) {
+                     config.value = config.min;
+                }
+                ensureAnimationLoop();
+            });
 
             group.appendChild(header);
             group.appendChild(slider);
+            group.appendChild(settings);
+            group.appendChild(controls);
             variablesContainer.appendChild(group);
         }
     }
