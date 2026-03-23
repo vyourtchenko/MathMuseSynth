@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnResetView = document.getElementById('btn-reset-view');
     const btnZoomYIn = document.getElementById('btn-zoom-y-in');
     const btnZoomYOut = document.getElementById('btn-zoom-y-out');
+    const btnSyncDomain = document.getElementById('btn-sync-domain');
 
     // Audio Context and Node Setup
     let audioCtx = null;
@@ -136,6 +137,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.05);
             }
         });
+
+        if (btnSyncDomain) {
+            btnSyncDomain.addEventListener('click', () => {
+                xMinInput.value = viewState.xMin.toFixed(2);
+                xMaxInput.value = viewState.xMax.toFixed(2);
+                parseAndDraw();
+                if (isPlaying) updateAudioLive();
+            });
+        }
 
         // Add a slight delay to ensure everything is parsed initially
         setTimeout(() => {
