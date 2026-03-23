@@ -1,10 +1,14 @@
 # MathMuse | Hear the Shape of Math
 
-MathMuse is an interactive web application that translates mathematical functions directly into sound in real-time. It provides a visual and auditory playground to explore how equations sound and look by offering a rich mathematical input interface, an interactive waveform graph, and real-time audio synthesis.
+MathMuse is an interactive web application that translates mathematical functions directly into a sound form in real-time. It provides a visual and auditory playground to explore how equations sound and look by offering a math input interface, an interactive waveform graph, and real-time audio synthesis.
+
+## Inspiration
+
+MathMuse was directly inspired by Desmos. While Desmos allows users to explore the visual landscape of equations and play the sound of functions by mapping their outputs to audible frequencies, its sonification approach is constrained. MathMuse was built to take this a step further: instead of representing changing values as varying pitches, MathMuse lets you literally listen to the *fundamental sound form* (waveform amplitude) of any function you choose. 
 
 ## Features
 
-- **Rich Mathematical Input:** Powered by MathLive and Math.js, users can input complex equations using standard mathematical notation (e.g., `\sin(100 \cdot x) + \cos(200 \cdot x)`).
+- **Mathematical Input:** Powered by MathLive and Math.js, users can input complex equations using standard mathematical notation (e.g., `\sin(100 \cdot x) + \cos(200 \cdot x)`).
 - **Real-Time Audio Synthesis:** The web application seamlessly maps the numerical output of your function across a chosen mathematical domain directly into an audio buffer using the Web Audio API. 
 - **Dynamic Variables:** MathMuse intelligently parses your equation to find any custom variables (like `a`, `b`, etc.). It automatically brings up interactive sliders for these variables, letting you manipulate the math—and the resulting sound and shape—in real-time during playback.
 - **Interactive Waveform Graph:** 
