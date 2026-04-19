@@ -1,9 +1,9 @@
-# MathMuse | AI Developer Context Guide
+# MathMuseSynth | AI Developer Context Guide
 
-This document is intended for LLM agents working on **MathMuse** later on. It summarizes the project's architecture, recent feature history, and critical technical caveats necessary to avoid structural bugs.
+This document is intended for LLM agents working on **MathMuseSynth** later on. It summarizes the project's architecture, recent feature history, and critical technical caveats necessary to avoid structural bugs.
 
 ## Project Summary
-MathMuse is a vanilla web application (HTML/CSS/JS) that sonifies mathematical functions using the Web Audio API. Unlike Desmos, which plays pitch based on Y-values, MathMuse buffers the entire X->Y function evaluation as a direct audio waveform.
+MathMuseSynth is a vanilla web application (HTML/CSS/JS) that sonifies mathematical functions using the Web Audio API. Unlike Desmos, which plays pitch based on Y-values, MathMuseSynth buffers the entire X->Y function evaluation as a direct audio waveform.
 
 ### Core Architecture
 - **Math Inputs:** Rendered via [MathLive](https://cortexjs.io/mathlive/) (`ASCII-math`). Evaluated efficiently using [math.js](https://mathjs.org/) (`AST traversal + evaluate()`).

@@ -24,7 +24,7 @@ test.describe('WAV Audio Export', () => {
     const download = await downloadPromise;
 
     // Verify the filename is correct
-    expect(download.suggestedFilename()).toBe('mathmuse-sample.wav');
+    expect(download.suggestedFilename()).toBe('mathmusesynth-sample.wav');
   });
 
   test('WAV encoder writes a standards-compliant RIFF header', async ({ page }) => {

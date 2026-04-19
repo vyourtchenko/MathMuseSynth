@@ -1,16 +1,16 @@
-# MathMuse | Hear the Shape of Math
+# MathMuseSynth | Hear the Shape of Math
 
-MathMuse is an interactive web application that translates mathematical functions directly into a sound form in real-time. It provides a visual and auditory playground to explore how equations sound and look by offering a math input interface, an interactive waveform graph, and real-time audio synthesis.
+MathMuseSynth is an interactive web application that translates mathematical functions directly into a sound form in real-time. It provides a visual and auditory playground to explore how equations sound and look by offering a math input interface, an interactive waveform graph, and real-time audio synthesis.
 
 ## Inspiration
 
-MathMuse was directly inspired by Desmos. While Desmos allows users to explore the visual landscape of equations and play the sound of functions by mapping their outputs to audible frequencies, its sonification approach is constrained. MathMuse was built to take this a step further: instead of representing changing values as varying pitches, MathMuse lets you literally listen to the *fundamental sound form* (waveform amplitude) of any function you choose. 
+MathMuseSynth was directly inspired by Desmos. While Desmos allows users to explore the visual landscape of equations and play the sound of functions by mapping their outputs to audible frequencies, its sonification approach is constrained. MathMuseSynth was built to take this a step further: instead of representing changing values as varying pitches, MathMuseSynth lets you literally listen to the *fundamental sound form* (waveform amplitude) of any function you choose. 
 
 ## Features
 
 - **Mathematical Input:** Powered by MathLive and Math.js, users can input complex equations using standard mathematical notation (e.g., `\sin(100 \cdot x) + \cos(200 \cdot x)`).
 - **Real-Time Audio Synthesis:** The web application seamlessly maps the numerical output of your function across a chosen mathematical domain directly into an audio buffer using the Web Audio API. 
-- **Dynamic Variables:** MathMuse intelligently parses your equation to find any custom variables (like `a` or `b`). It automatically brings up interactive sliders. Variables now support:
+- **Dynamic Variables:** MathMuseSynth intelligently parses your equation to find any custom variables (like `a` or `b`). It automatically brings up interactive sliders. Variables now support:
   - Custom Min, Max, and Step boundaries.
   - Dedicated variable animation playback loops with config modes (Oscillate, Loop, Play Once, Continuous) and adjustable dynamic multiplier speeds.
 - **Piano Mode Synthesizer:** Transform any mathematical function into a fully playable instrument. By mapping your QWERTY keyboard (A-L for white keys, W-P for black keys), Piano Mode spawns polyphonic musical pitches bounded by automated ADSR volume envelopes for smooth playability.

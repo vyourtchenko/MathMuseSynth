@@ -33,7 +33,7 @@ test.describe('Polyphonic Piano Mode Synthesizer', () => {
     const playBtn = page.locator('#btn-play');
     await playBtn.click();
     
-    // Assert it is actively playing by checking mathmuse HTML state string
+    // Assert it is actively playing by checking mathmusesynth HTML state string
     await expect(playBtn).toContainText('Pause');
 
     const pianoBtn = page.locator('#btn-piano-mode');
