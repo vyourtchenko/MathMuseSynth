@@ -759,6 +759,12 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPianoMode.classList.add('active');
             btnPianoMode.innerHTML = '<i class="ph-fill ph-piano-keys"></i> Exit Piano Mode';
             pianoInstructions.style.display = 'block';
+            document.getElementById('piano-visual-container').classList.add('active');
+            document.querySelector('.main-graph').classList.add('piano-active');
+            
+            // Force recalculate canvas geometries immediately since viewport slice mathematically altered height natively
+            resizeCanvas();
+            drawWaveform();
             
             btnPianoMode.style.opacity = '0.5';
             pianoBuffer = await generateAudioBuffer();
@@ -767,6 +773,15 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPianoMode.classList.remove('active');
             btnPianoMode.innerHTML = '<i class="ph-fill ph-piano-keys"></i> Piano Mode';
             pianoInstructions.style.display = 'none';
+            document.getElementById('piano-visual-container').classList.remove('active');
+            document.querySelector('.main-graph').classList.remove('piano-active');
+            
+            // Force recalculate canvas geometries back to full window height mathematically
+            resizeCanvas();
+            drawWaveform();
+            
+            // Clean up any globally stuck keys visually
+            document.querySelectorAll('.piano-key.active').forEach(k => k.classList.remove('active'));
             releaseAllNotes();
             pianoBuffer = null;
         }
@@ -781,12 +796,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const semitone = KEY_TO_SEMITONE[e.code];
         if (semitone !== undefined) {
             playNote(e.code, semitone);
+            
+            const keyEl = document.querySelector(`.piano-key[data-key="${e.code}"]`);
+            if (keyEl) keyEl.classList.add('active');
+            
+            const multiplier = Math.pow(2, semitone / 12);
+            document.getElementById('piano-telemetry-mult').textContent = `Pitch Multiplier: ${multiplier.toFixed(2)} x`;
         }
     }
 
     function handleKeyUp(e) {
         if (!isPianoMode) return;
         releaseNote(e.code);
+        
+        const keyEl = document.querySelector(`.piano-key[data-key="${e.code}"]`);
+        if (keyEl) keyEl.classList.remove('active');
     }
     
     function playNote(keyCode, semitone) {

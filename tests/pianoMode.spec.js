@@ -112,4 +112,85 @@ test.describe('Polyphonic Piano Mode Synthesizer', () => {
     // Verify natively the system explicitly instantiated a totally new buffer without a manually re-trigger explicitly
     expect(secondaryBufferCount).toBeGreaterThan(initialBufferCount);
   });
+
+  test('Piano visual UI correctly mounts split-screen and registers mechanical key illumination explicitly dynamically', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    const pianoBtn = page.locator('#btn-piano-mode');
+    const visualContainer = page.locator('#piano-visual-container');
+    const telemetryMult = page.locator('#piano-telemetry-mult');
+
+    // Enable Piano Mode physically verifying CSS layout splits successfully natively
+    await pianoBtn.click();
+    await expect(visualContainer).toHaveClass(/active/);
+    
+    // Press white KeyA explicitly holding it down geometrically physically
+    await page.keyboard.down('KeyA');
+    
+    const keyA = page.locator('.piano-key[data-key="KeyA"]');
+    
+    // Verify physical UI key element explicitly triggers glowing state actively geometrically
+    await expect(keyA).toHaveClass(/active/);
+    
+    // Verify telemetry mathematically dynamically updates string calculations correctly explicitly
+    await expect(telemetryMult).toContainText('1.00 x');
+
+    // Lift physical key cleanly validating strict DOM sweeping natively
+    await page.keyboard.up('KeyA');
+    await expect(keyA).not.toHaveClass(/active/);
+
+    // Press black KeyW triggering mathematically offset fractional pitches precisely holding it
+    await page.keyboard.down('KeyW');
+    const keyW = page.locator('.piano-key[data-key="KeyW"]');
+    
+    // Validate Black keys effectively accurately register active bounds perfectly
+    await expect(keyW).toHaveClass(/active/);
+    
+    // Verify telemetry realistically maps exact floating multipliers (~1.06 x dynamically calculated accurately)
+    await expect(telemetryMult).toContainText('1.06 x');
+    
+    // Cleanup securely strictly closing physical bindings geometrically explicitly
+    await page.keyboard.up('KeyW');
+  });
+
+  test('Polyphonic interactions seamlessly handle multiple concurrent key illuminations recursively', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    const pianoBtn = page.locator('#btn-piano-mode');
+    await pianoBtn.click();
+    
+    // Select chords physically structurally grouping (Keys natively mapped A, D, G)
+    const keyA = page.locator('.piano-key[data-key="KeyA"]');
+    const keyD = page.locator('.piano-key[data-key="KeyD"]');
+    const keyG = page.locator('.piano-key[data-key="KeyG"]');
+    
+    // Press multiple native keys cascading mathematically
+    await page.keyboard.down('KeyA');
+    await page.keyboard.down('KeyD');
+    await page.keyboard.down('KeyG');
+    
+    // Assert exactly all target keys structurally glow fully illuminated natively dynamically
+    await expect(keyA).toHaveClass(/active/);
+    await expect(keyD).toHaveClass(/active/);
+    await expect(keyG).toHaveClass(/active/);
+    
+    // Release a single arbitrary key globally breaking the physical hold gracefully
+    await page.keyboard.up('KeyD');
+    
+    // Validate strict DOM cleanup ensures ONLY the exact referenced key releases securely!
+    await expect(keyD).not.toHaveClass(/active/);
+    
+    // Verify remaining logically bounded elements retain their active mathematical holds successfully natively
+    await expect(keyA).toHaveClass(/active/);
+    await expect(keyG).toHaveClass(/active/);
+    
+    // Clean up explicitly organically globally triggering events natively explicitly cleanly
+    await page.keyboard.up('KeyA');
+    await page.keyboard.up('KeyG');
+    
+    await expect(keyA).not.toHaveClass(/active/);
+    await expect(keyG).not.toHaveClass(/active/);
+  });
 });
