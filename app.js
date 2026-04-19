@@ -165,6 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
 
+        const btnDownloadWav = document.getElementById('btn-download-wav');
+        if (btnDownloadWav) {
+            btnDownloadWav.addEventListener('click', downloadWav);
+        }
+
         // Add a slight delay to ensure everything is parsed initially
         setTimeout(() => {
             parseAndDraw();
@@ -397,6 +402,86 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return buffer;
+    }
+
+    // --- WAV Export ---
+    async function downloadWav() {
+        if (!compiledMath) {
+            errorMsg.textContent = 'Enter a valid equation first.';
+            return;
+        }
+
+        const buffer = await generateAudioBuffer();
+        if (!buffer) return;
+
+        const wavBlob = encodeWav(buffer);
+        const url = URL.createObjectURL(wavBlob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mathmuse-sample.wav';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function encodeWav(audioBuffer) {
+        const numChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const bitsPerSample = 16;
+        const bytesPerSample = bitsPerSample / 8;
+        const blockAlign = numChannels * bytesPerSample;
+        const frameCount = audioBuffer.length;
+        const dataSize = frameCount * blockAlign;
+        const headerSize = 44;
+        const totalSize = headerSize + dataSize;
+
+        const arrayBuffer = new ArrayBuffer(totalSize);
+        const view = new DataView(arrayBuffer);
+
+        // RIFF chunk descriptor
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, totalSize - 8, true);
+        writeString(view, 8, 'WAVE');
+
+        // fmt sub-chunk
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);              // Sub-chunk size (16 for PCM)
+        view.setUint16(20, 1, true);               // Audio format (1 = PCM)
+        view.setUint16(22, numChannels, true);      // Number of channels
+        view.setUint32(24, sampleRate, true);       // Sample rate
+        view.setUint32(28, sampleRate * blockAlign, true); // Byte rate
+        view.setUint16(32, blockAlign, true);       // Block align
+        view.setUint16(34, bitsPerSample, true);    // Bits per sample
+
+        // data sub-chunk
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataSize, true);
+
+        // Write interleaved PCM samples
+        const channelData = [];
+        for (let ch = 0; ch < numChannels; ch++) {
+            channelData.push(audioBuffer.getChannelData(ch));
+        }
+
+        let offset = headerSize;
+        for (let i = 0; i < frameCount; i++) {
+            for (let ch = 0; ch < numChannels; ch++) {
+                const sample = Math.max(-1, Math.min(1, channelData[ch][i]));
+                const int16 = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                view.setInt16(offset, int16, true);
+                offset += 2;
+            }
+        }
+
+        return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
     }
 
     // --- Dynamic Variables ---
