@@ -940,9 +940,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleKeyDown(e) {
         if (!isPianoMode || !pianoBuffer || e.repeat) return;
-        
-        const activeTag = document.activeElement.tagName.toLowerCase();
-        if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement.closest('math-field')) return;
+
+        // Suppress piano input only when the focused element actually consumes
+        // letter keys as text — math-field, textarea, or a text-accepting
+        // <input>. Range/number/checkbox etc. inputs can't absorb the letter
+        // keys that map to notes, so blocking them would make the piano appear
+        // broken after the user touches e.g. the volume slider (which retains
+        // focus after a click).
+        const activeEl = document.activeElement;
+        if (activeEl) {
+            if (activeEl.closest('math-field')) return;
+            if (activeEl.tagName === 'TEXTAREA') return;
+            if (activeEl.isContentEditable) return;
+            if (activeEl.tagName === 'INPUT') {
+                const type = (activeEl.type || 'text').toLowerCase();
+                const textInputTypes = ['text', 'search', 'email', 'url', 'password', 'tel'];
+                if (textInputTypes.includes(type)) return;
+            }
+        }
 
         const semitone = KEY_TO_SEMITONE[e.code];
         if (semitone !== undefined) {

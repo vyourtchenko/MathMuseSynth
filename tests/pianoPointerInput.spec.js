@@ -136,6 +136,39 @@ test.describe('Piano pointer input (mouse + touch)', () => {
     await expect(keyG).not.toHaveClass(/active/);
   });
 
+  test('Keyboard notes still fire after interacting with the volume slider', async ({ page }) => {
+    // Regression: clicking the volume slider kept focus on the <input
+    // type="range">, and the over-broad focus guard suppressed every piano
+    // keydown until focus moved elsewhere — the piano looked dead even though
+    // pointer input still worked.
+    await page.goto('/');
+    await page.waitForTimeout(500);
+
+    await page.locator('#btn-piano-mode').click();
+    await page.waitForTimeout(300);
+
+    // Focus the volume slider by clicking it, simulating what a user does to
+    // change volume. Don't move focus away afterward — that's the bug condition.
+    const volume = page.locator('#volume');
+    await volume.focus();
+    await page.evaluate(() => {
+      const v = document.getElementById('volume');
+      v.value = '0.6';
+      v.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    // Volume slider is still the active element here.
+    const activeIsVolume = await page.evaluate(() => document.activeElement?.id === 'volume');
+    expect(activeIsVolume).toBe(true);
+
+    // Press a piano key via the keyboard. This must still activate the key.
+    await page.keyboard.down('KeyA');
+    const keyA = page.locator('.piano-key[data-key="KeyA"]');
+    await expect(keyA).toHaveClass(/active/);
+    await page.keyboard.up('KeyA');
+    await expect(keyA).not.toHaveClass(/active/);
+  });
+
   test('pointercancel releases the note (e.g. browser reclaims the gesture)', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(500);
