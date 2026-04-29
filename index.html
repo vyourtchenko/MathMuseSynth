@@ -40,13 +40,11 @@
 
             <section class="equation-section">
                 <label for="formula">f(x) =</label>
-                <div class="math-input-wrapper">
-                    <math-field id="formula" default-mode="math">
-                        \sin(a \cdot x) + \cos(b \cdot x)
-                    </math-field>
-                </div>
-                <div id="equation-error" class="error-msg"></div>
+                <math-field id="formula" default-mode="math">
+                    \sin(a \cdot x) + \cos(b \cdot x)
+                </math-field>
             </section>
+            <div id="equation-error" class="error-msg equation-error-row"></div>
 
             <!-- Dynamic Variables injected here -->
             <section class="variables-section" id="variables-container" style="display: none;">

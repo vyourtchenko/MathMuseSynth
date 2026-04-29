@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDownloadWav.addEventListener('click', downloadWav);
         }
 
+
         // Add a slight delay to ensure everything is parsed initially
         setTimeout(() => {
             parseAndDraw();
