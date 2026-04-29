@@ -1382,4 +1382,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Run
     init();
+
+    // Sidebar resize handle
+    const sidebarEl = document.querySelector('.sidebar');
+    const resizeHandle = document.getElementById('sidebar-resize-handle');
+    const MIN_SIDEBAR_WIDTH = 320;
+    const MAX_SIDEBAR_WIDTH = Math.round(window.innerWidth * 0.7);
+
+    let isResizing = false;
+
+    resizeHandle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        resizeHandle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const newWidth = Math.min(Math.max(e.clientX, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+        sidebarEl.style.width = newWidth + 'px';
+        resizeCanvas();
+        drawWaveform();
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isResizing) return;
+        isResizing = false;
+        resizeHandle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        parseAndDraw();
+    });
 });
